@@ -9,6 +9,8 @@ This tool is designed to translate VTT and SRT subtitles while maintaining conve
 ## Features
 
 -   **Context-Aware**: Mainains a sliding window of previous lines to ensure consistent context (e.g., "back" direction vs. body part).
+-   **Advanced VTT Formatting**: Uses a custom parser for `.vtt` files to preserve **100%** of styling, positioning (`line:90%`), and speaker tags (`<v Ben>`).
+-   **Multi-Format Support**: Supports both `.vtt` (with advanced preservation) and `.srt` files.
 -   **Hybrid Model Strategy**: Uses `gemini-3-flash` for speed/cost and automatically falls back to `gemini-3-pro` for low-confidence translations (interactive mode).
 -   **Show-Specific Configurations**: Define system prompts and glossaries in simple YAML files (see `contexts/jetlag.yaml`).
 -   **Resumable**: Automatically detects existing progress and resumes translation if interrupted.

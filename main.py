@@ -32,9 +32,9 @@ except ImportError:
     sys.exit(1)
 
 from dotenv import load_dotenv
-import webvtt
 import pysrt
 from tqdm import tqdm
+from vtt_parser import CustomVTTFile
 
 # Setup logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -137,6 +137,7 @@ class GeminiTranslator:
             "1. Maintain the tone and style described in the context.\n"
             "2. Output strictly valid JSON with keys 'lines', 'confidence', 'issues'.\n"
             "3. 'lines' must be an array of strings corresponding exactly to input indices.\n"
+            "4. CRITICAL: Input may contain XML-like tags (e.g. <v Ben>). PRESERVE these exactly. Only translate the text CONTENT inside the tags.\n"
             f"{self.config.context_prompt}\n"
             f"{self.config.glossary_prompt}"
         )
@@ -213,11 +214,12 @@ class GeminiTranslator:
         # Read subs
         is_vtt = file_path.suffix == '.vtt'
         if is_vtt:
-            captions = webvtt.read(str(file_path)).captions
+            # Use CustomVTTFile to extract cues
+            vtt = CustomVTTFile(str(file_path))
+            cues_text = [c.text for c in vtt.get_cues()]
         else:
             captions = pysrt.open(str(file_path), encoding='utf-8')
-        
-        cues_text = [c.text for c in captions]
+            cues_text = [c.text for c in captions]
         batch_size = self.config.batch_size
         context_overlap = self.config.context_overlap
         
@@ -325,11 +327,13 @@ class SubtitleProcessor:
         async with semaphore:
             output_path = self.get_output_filename(file_path)
             
-            # Identify format
+            # Identify format & Load Source
             is_vtt = file_path.suffix == '.vtt'
             try:
                 if is_vtt:
-                    captions = webvtt.read(str(file_path)).captions
+                    # Use Custom Parser to preserve layout/source structure
+                    source_vtt = CustomVTTFile(str(file_path))
+                    captions = source_vtt.get_cues()
                 else:
                     captions = pysrt.open(str(file_path), encoding='utf-8')
             except Exception as e:
@@ -339,19 +343,40 @@ class SubtitleProcessor:
             total_cues = len(captions)
             
             # Load existing progress
-            translated_cues = []
+            # For VTT, we use the source as the 'skeleton' and fill in existing translations
+            # to ensure we never lose the original styles.
+            start_index = 0
+            
             if output_path.exists():
                 try:
                     if is_vtt:
-                        translated_cues = webvtt.read(str(output_path)).captions
+                        # Load output just to get the translated text
+                        existing_vtt = CustomVTTFile(str(output_path))
+                        existing_cues = existing_vtt.get_cues()
+                        
+                        # Hydrate source skeleton with existing translations
+                        # RESUMPTION FIX: limit is set to the number of existing cues.
+                        limit = len(existing_cues)
+                        
+                        for i in range(limit):
+                            if i < len(captions):
+                                captions[i].text = existing_cues[i].text
+                        
+                        # Ensure we resume AFTER the last existing cue
+                        # If existing file matches source length, we are done.
+                        if limit == len(captions):
+                             start_index = total_cues
+                        else:
+                             start_index = limit
+                        
+                        logger.info(f"Resuming {file_path.name}: {start_index}/{total_cues} cues found.")
                     else:
                         translated_cues = pysrt.open(str(output_path), encoding='utf-8')
-                    logger.info(f"Resuming {file_path.name}: {len(translated_cues)}/{total_cues} already done.")
+                        start_index = len(translated_cues)
+                        logger.info(f"Resuming {file_path.name}: {start_index}/{total_cues} already done.")
                 except Exception:
                     logger.warning(f"Could not read existing output {output_path}. Starting over.")
-            
-            # Determine start index
-            start_index = len(translated_cues)
+
             if start_index >= total_cues:
                 # Mark as done
                 return
@@ -399,31 +424,71 @@ class SubtitleProcessor:
                     translated_texts = translated_texts[:len(batch)]
                     translated_texts += [""] * (len(batch) - len(translated_texts))
 
-                # Update cues and append
-                current_translated_batch = []
-                import copy
-                for original_cue, new_text in zip(batch, translated_texts):
-                    # Robust cloning
-                    if is_vtt:
-                         new_cue = copy.copy(original_cue)
-                         new_cue.text = new_text
-                         current_translated_batch.append(new_cue)
-                    else:
-                         new_cue = copy.copy(original_cue)
-                         new_cue.text = new_text
-                         current_translated_batch.append(new_cue)
+                # Update cues
+                for cue, new_text in zip(batch, translated_texts):
+                    cue.text = new_text
 
                 # Incremental Save
-                translated_cues.extend(current_translated_batch)
-                self.stats.processed_cues += len(current_translated_batch)
+                self.stats.processed_cues += len(batch)
                 
                 try:
                     if is_vtt:
-                        vtt = webvtt.WebVTT()
-                        vtt.captions = translated_cues
-                        vtt.save(str(output_path))
+                        # TRUNCATE the source_vtt to only include cues up to this point
+                        # We use a fresh CustomVTTFile structure for saving to avoid determining "tail" issues
+                        # But simpler: modify the source_vtt.blocks in place? 
+                        # We want to save [Header] + [Translated Cues so far].
+                        # source_vtt instance has ALL blocks. We need to check which ones are "done".
+                        # Actually, 'captions' in our loop (line 228) is a list of cues.
+                        # source_vtt.blocks contains everything (headers, cues).
+                        
+                        # 1. Get header from source.
+                        # 2. Get cues 0 to (total_idx + len(batch)).
+                        # 3. Save these.
+                        
+                        # We need the non-cue blocks (header/styles) too.
+                        # But we can't easily interleave if we just have a list of cues.
+                        # CustomVTTFile structure keeps order.
+                        
+                        # So, we iterate source_vtt.blocks.
+                        # If block is a Cue, we check if it is within our processed range.
+                        # If it is beyond our range, we STOP saving (truncate file).
+                        
+                        curr_cue_count = 0
+                        target_count = total_idx + len(batch)
+                        
+                        blocks_to_save = []
+                        
+                        # Add headers/styles from source
+                        # This assumes Style blocks are at the top (standard).
+                        # If there are comments in between cues, they will be preserved if before the cutoff.
+                        
+                        for blk in source_vtt.blocks:
+                            if not blk.is_cue:
+                                # Always save metadata blocks? 
+                                # What if metadata is at the end? (Rare).
+                                # Safer: Save metadata if we haven't hit the cutoff? 
+                                # Let's save metadata if it appears before the last translated cue.
+                                blocks_to_save.append(blk)
+                            else:
+                                if curr_cue_count < target_count:
+                                    blocks_to_save.append(blk)
+                                    curr_cue_count += 1
+                                else:
+                                    # We reached the end of translated content. Stop adding blocks.
+                                    # Wait, do we stop adding *all* blocks? 
+                                    # Yes, to avoid saving English tail.
+                                    break
+                        
+                        # Create a temp object to save
+                        temp_vtt = CustomVTTFile("") # Dummy
+                        temp_vtt.header = source_vtt.header
+                        temp_vtt.blocks = blocks_to_save
+                        temp_vtt.save(str(output_path))
+                        
                     else:
-                        srt_file = pysrt.SubRipFile(items=translated_cues)
+                        # SRT approach remains same (list based)
+                        current_complete_cues = captions[:total_idx + len(batch)]
+                        srt_file = pysrt.SubRipFile(items=current_complete_cues)
                         srt_file.save(str(output_path), encoding='utf-8')
                 except Exception as e:
                     logger.error(f"Failed to save {output_path}: {e}")

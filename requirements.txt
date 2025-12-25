@@ -1,6 +1,5 @@
 google-genai
 python-dotenv
-webvtt-py
 pysrt
 PyYAML
 tqdm
