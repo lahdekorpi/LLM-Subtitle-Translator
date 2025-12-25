@@ -1,5 +1,7 @@
 # LLM Subtitle Translator
 
+![LLM Subtitle Translator Banner](assets/banner.png)
+
 A robust, context-aware subtitle translation tool powered by Google's Gemini 3 models (Flash & Pro).
 
 This tool is designed to translate VTT and SRT subtitles while maintaining conversational context, specific terminology, and tone. It supports specific show configurations (like "Jet Lag: The Game") and uses a hybrid model approach to balance cost and quality.
