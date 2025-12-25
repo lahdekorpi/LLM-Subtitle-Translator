@@ -89,6 +89,23 @@ glossary:
     "Tag": { "translations": {"fi": "Hippa"}, "guidance": "The game name." }
 ```
 
+## "Screenshot"
+```bash
+$ python3 main.py --inputs "Ep 2 — Time Trapped! [3d7f5e2c-f8da-459e-a51c-a090802614f7].en.vtt" --show-config contexts/jetlag.yaml
+Starting translation for 1 files...
+Model: models/gemini-3-flash-preview | Mode: Interactive
+Queuing 1 files...
+Translating Ep 2 — Time Trapped! [3d7f5e2c-f8da-459e-a51c-a090802614f7].en.vtt:  94%|██████████████████████▍   | 1340/1418 [00:20<00:40,  1.94cues/s]
+
+--- Translation Summary ---
+Time Elapsed: 80.29s
+Files Processed: 1
+Total Cues: 118
+Fallback Model Used: 0 times
+Low Confidence Actions: 0
+---------------------------
+```
+
 ## License
 
 MIT License

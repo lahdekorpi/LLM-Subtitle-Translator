@@ -320,7 +320,7 @@ class SubtitleProcessor:
              stem = stem[:-3]
         return input_path.parent / f"{stem}.{self.config.target_language_code}{suffix}"
 
-    async def process_file(self, file_path: Path, semaphore: asyncio.Semaphore, pbar: tqdm):
+    async def process_file(self, file_path: Path, semaphore: asyncio.Semaphore, outer_pbar: tqdm):
         """Processes a single subtitle file."""
         async with semaphore:
             output_path = self.get_output_filename(file_path)
@@ -353,10 +353,15 @@ class SubtitleProcessor:
             # Determine start index
             start_index = len(translated_cues)
             if start_index >= total_cues:
-                pbar.update(total_cues) # Mark as done
+                # Mark as done
                 return
 
             cues_to_process = captions[start_index:]
+            
+            # Setup granular progress bar for cues
+            desc_text = f"Translating {file_path.name}"
+            # If multiple files, we might want to make this cleaner, but for single file mode this is key.
+            cue_pbar = tqdm(total=total_cues, initial=start_index, desc=desc_text, unit="cues", leave=True)
             
             # Batch Processing
             batch_size = self.config.batch_size
@@ -425,11 +430,14 @@ class SubtitleProcessor:
                     break
 
                 # Update progress bar
-                pbar.update(len(batch))
+                # pbar passed here is the *outer* file pbar. We don't update it per cue.
+                # Instead, we should have a local cue_pbar.
+                cue_pbar.update(len(batch))
                 
                 # Rate limit sleep
                 await asyncio.sleep(self.config.request_interval)
             
+            cue_pbar.close()
             logger.info(f"Finished {file_path.name}")
 
     async def run(self, input_paths: List[Path]):
@@ -439,10 +447,20 @@ class SubtitleProcessor:
         
         print(f"Queuing {len(input_paths)} files...")
         
-        with tqdm(total=len(input_paths), desc="Files") as file_pbar:
+        # Prepare File Progress Bar
+        # If we have only 1 file, we hide the outer "Files" bar (or make it simple)
+        # to allow the inner "Cues" bar to shine. 
+        # But if we have multiple, we want the outer bar to show overall progress.
+        
+        show_outer_bar = len(input_paths) > 1
+        
+        with tqdm(total=len(input_paths), desc="Files", disable=not show_outer_bar) as file_pbar:
             async def wrapped_process(path):
-                dummy_pbar = tqdm(disable=True) 
-                await self.process_file(path, semaphore, dummy_pbar)
+                # For inner cue progress:
+                # If only 1 file is being processed, we show the cue progress bar.
+                # If multiple are processed in parallel, it might get messy, but 
+                # config defaults to workers=1, so sequential is fine.
+                await self.process_file(path, semaphore, file_pbar)
                 file_pbar.update(1)
 
             tasks = [wrapped_process(p) for p in input_paths]
