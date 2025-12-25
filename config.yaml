@@ -1,0 +1,23 @@
+target_language: "Finnish"
+target_language_code: "fin"
+
+# Primary Model (Fast & Cheap)
+model: "models/gemini-3-flash-preview"
+
+# Fallback Model (High Quality)
+fallback_model: "models/gemini-3-pro-preview"
+
+# Batches
+batch_size: 20
+context_overlap: 5
+
+# Generation
+temperature: 0.1
+max_output_tokens: 8192
+request_interval: 2.0  # Increased for stability
+timeout: 60
+retries: 3
+workers: 1  # Sequential for testing to avoid rate limits
+
+# Safety
+min_confidence: 0.8

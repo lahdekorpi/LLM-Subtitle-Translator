@@ -1,0 +1,159 @@
+name: "Jet Lag: The Game"
+description: "Context and Glossary for Jet Lag: The Game"
+
+# The core system prompt explaining tone, style, and general rules
+system_prompt: |
+  **Show Context:**
+  The content is from "Jet Lag: The Game," a YouTube travel competition show. 
+  **Tone:** Highly informal, fast-paced, witty, enthusiastic. Contains humor, banter, and strategic discussions.
+  **Terminology:**
+  - "Challenge": A task players must complete.
+  - "Curse": A penalty or handicap applied to a player.
+  - "Veto": The ability to skip a challenge.
+  - "Power-up": An advantage used in the game.
+  - "Tracker": A device or app showing player locations.
+  **formatting:**
+  - Convert US customary units (miles, feet) to metric (km, meters) in parentheses.
+
+# Glossary of terms. 
+# Keys under 'translations' should match target_language_code (e.g., 'fi', 'de', 'es').
+glossary:
+  game_mechanics:
+    "Tag (the game)":
+      translations:
+        fi: "Tag / Hippa"
+      guidance: "Tämä on tärkein termi. 'Tag' on 'hippaleikki' tai 'hippa'. Päätä, pidetäänkö englanninkielinen sana 'Tag' vai käännetäänkö se."
+    "Coins":
+      translations:
+        fi: "kolikot"
+      guidance: "Tämä on pelin valuutta."
+    "Challenge":
+      translations:
+        fi: "haaste"
+      guidance: "Käännä johdonmukaisesti."
+    "Curse":
+      translations:
+        fi: "Kirous"
+      guidance: "Keskeinen rangaistusmekaniikka."
+    "To clear the Curse":
+      translations:
+        fi: "kumota kirous / puhdistaa kirous"
+      guidance: "Käytä johdonmukaista ilmausta."
+    "Destination":
+      translations:
+        fi: "määränpää"
+      guidance: "Käännä johdonmukaisesti."
+    "Jail period":
+      translations:
+        fi: "jäähy / vankila-aika"
+      guidance: "Viittaa 45 minuutin odotukseen kiinnijäämisen jälkeen."
+    "Rest period":
+      translations:
+        fi: "lepoaika / lepojakso"
+      guidance: "Tämä on öinen, pakollinen pysähdys."
+    "Veto":
+      translations:
+        fi: "hylätty / mitätöity"
+      guidance: "Viittaa haasteen epäonnistumiseen."
+
+  team_roles:
+    "Runners":
+      translations:
+        fi: "Juoksijat / Karkurit"
+      guidance: "Joukkue, jota jahdataan."
+    "Chasers":
+      translations:
+        fi: "Kiinniottajat / Jahtaajat"
+      guidance: "Joukkue, joka yrittää ottaa kiinni."
+    "Stranded":
+      translations:
+        fi: "jumissa / pulaan juuttunut"
+      guidance: "Viittaa paikkaan juuttumiseen."
+    "Allies":
+      translations:
+        fi: "liittolaiset"
+      guidance: "Käännä johdonmukaisesti."
+
+  power_ups_and_challenges:
+    "Freeze (power-up)":
+      translations:
+        fi: "Jäädytys"
+      guidance: "Keskeinen power-up."
+    "Powerup":
+      translations:
+        fi: "power-up / tehoste"
+      guidance: "Voit joko säilyttää englanninkielisen sanan tai kääntää sen."
+    "Double-ups":
+      translations:
+        fi: "Tuplaukset"
+      guidance: "Korttityyppi."
+    "Take to the skies":
+      translations:
+        fi: "Nouse siivillesi"
+      guidance: "Haasteen nimi."
+    "Locate the Chasers":
+      translations:
+        fi: "Paikanna Kiinniottajat"
+      guidance: "Haasteen nimi."
+    "Get lucky on coin flips":
+      translations:
+        fi: "Onnea kolikonheittoon"
+      guidance: "Haasteen nimi."
+
+  locations:
+    "People":
+      translations:
+        fi: "Sam, Toby, Ben, Brian, Adam, Michelle"
+      guidance: "Pidä kaikki nimet sellaisinaan."
+    "Main Destinations":
+      translations:
+        fi: "Jersey, Zermatt"
+      guidance: "Pidä sellaisinaan."
+    "Other Locations":
+      translations:
+        fi: "Laon, Reims, Champagne-Ardenne, Saint-Malo, Prunay, Strasbourg, Paris, Zürich, Lyon, Geneva, Basel, Charles de Gaulle (CDG)"
+      guidance: "Pidä kaikki paikannimet sellaisinaan."
+
+  recurring_phrases:
+    "We might be so back":
+      translations:
+        fi: "Me tehdään niin paluu / Me ollaan niin takaisin pelissä"
+      guidance: "Toistuva slangifraasi."
+    "gg (good game)":
+      translations:
+        fi: "gg / Se oli siinä / Peli selvä"
+      guidance: "Pidä 'gg' tai käännä kontekstin mukaan."
+    "(Emotional) roller coaster":
+      translations:
+        fi: "(tunteiden) vuoristorata"
+      guidance: "Toistuva kielikuva."
+    "First ever flight of tag":
+      translations:
+        fi: "historian ensimmäinen tag-lento"
+      guidance: "Keskeinen fraasi."
+
+  proper_nouns_do_not_translate:
+    "Jet Lag: The Game":
+      translations:
+        fi: "Jet Lag: The Game"
+      guidance: "Älä käännä."
+    "Nebula":
+      translations:
+        fi: "Nebula"
+      guidance: "Älä käännä."
+    "The Layover":
+      translations:
+        fi: "The Layover"
+      guidance: "Podcastin nimi, älä käännä."
+    "Battle of Britain":
+      translations:
+        fi: "Battle of Britain"
+      guidance: "Ohjelman nimi, älä käännä."
+    "RealLifeLore":
+      translations:
+        fi: "RealLifeLore"
+      guidance: "Kanavan nimi, älä käännä."
+    "Mad Kings":
+      translations:
+        fi: "Mad Kings"
+      guidance: "Ohjelman nimi, älä käännä."
